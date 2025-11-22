@@ -2,25 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Graph + MST Algorithms</title>
-  <link rel="stylesheet" href="./final.css">
+  <title>Graph & MST Visualizer</title>
+  <link rel="stylesheet" href="./final.css" />
 </head>
 <body>
-  <div class="controls">
-    <label>Nodes (e.g., A,B,C):</label>
-    <input type="text" id="nodesInput" placeholder="A,B,C" />
-    <label>Edges (e.g., A-B:3,B-C:2,C-A:1):</label>
-    <input type="text" id="edgesInput" placeholder="A-B:3,B-C:2,C-A:1" />
-    <button onclick="drawGraph()">Draw Graph</button>
-    <!-- <label for="">Start Vertex prim's:</label>
-    <input type="text" id="startVertex" placeholder="vertex">
-    <button onclick="runPrim()">Run Prim's</button> -->
-    <button onclick="runKruskal()">Calculate MST</button>
+  <div class="app">
+    <header class="app-header">
+      <h1>Graph & MST Visualizer</h1>
+      <p>
+        Enter nodes and weighted edges to visualize the graph and calculate
+        the Minimum Spanning Tree (MST).
+      </p>
+    </header>
+
+    <main class="app-main">
+      <section class="control-card">
+        <h2 class="section-title">Input Graph</h2>
+
+        <div class="field-group">
+          <label for="nodesInput">Nodes</label>
+          <input
+            type="text"
+            id="nodesInput"
+            placeholder="Example: A,B,C,D"
+          />
+          <small class="hint">
+            Separate each node with a comma.
+          </small>
+        </div>
+
+        <div class="field-group">
+          <label for="edgesInput">Edges with Weights</label>
+          <input
+            type="text"
+            id="edgesInput"
+            placeholder="Example: A-B:3,B-C:2,C-A:1"
+          />
+          <small class="hint">
+            Format: <b>U-V:weight</b>, separated by commas.
+          </small>
+        </div>
+
+        <div class="button-row">
+          <button class="btn primary" onclick="drawGraph()">
+            Draw Graph
+          </button>
+          <button class="btn secondary" onclick="runKruskal()">
+            Calculate MST (Kruskal)
+          </button>
+          <button class="btn ghost" type="button" onclick="loadDemo()">
+              Demo Graph
+          </button>
+        </div>
+
+        <!-- If later you add Prim's, keep same style -->
+        <!--
+        <div class="field-group inline">
+          <label for="startVertex">Start Vertex (Prim's)</label>
+          <input type="text" id="startVertex" placeholder="e.g., A" />
+          <button class="btn ghost" onclick="runPrim()">Run Prim's</button>
+        </div>
+        -->
+      </section>
+
+      <section class="visual-card">
+        <div class="visual-header">
+          <h2 class="section-title">Graph View</h2>
+          <p id="mstWeightDisplay" class="mst-badge">
+            <!-- Filled by JS -->
+          </p>
+        </div>
+
+        <svg id="graph"></svg>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        Built with C++ logic &amp; JavaScript visualization • Presented by
+        <b>Ramakant Gupta</b>
+      </p>
+    </footer>
   </div>
-
-  <svg id="graph"></svg>
-  <p id="mstWeightDisplay" ></p>
-
 
   <script src="./final.js"></script>
 </body>
