@@ -1,0 +1,54 @@
+body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 0;
+}
+.controls {
+      padding: 1rem;
+      background: #e2e8f0;
+}
+    input, button {
+      margin: 5px;
+      padding: 6px;
+      font-size: 14px;
+    }
+    svg {
+      width: 100vw;
+      height: 80vh;
+      background: white;
+    }
+    .node {
+      fill: #4f46e5;
+      cursor: pointer;
+    }
+    .edge {
+      stroke: #888;
+      stroke-width: 2;
+    }
+    .mst-edge {
+      stroke: #10b981;
+      stroke-width: 3;
+    }
+    .label {
+      font-size: 12px;
+      fill: black;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    .weight-label {
+      font-weight: bold;
+      font-size: 20px;
+      fill: #333;
+    }
+#mstWeightDisplay{
+    margin-left: 40%;
+    padding: 10px;
+    background-color: blue;
+    width: 20%;
+    font-size: 16px; 
+    font-weight: bold; 
+    padding-left: 1rem;
+    margin-bottom: 50px;
+    text-align: center;
+}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Graph + MST Algorithms</title>
+  <link rel="stylesheet" href="./final.css">
+</head>
+<body>
+  <div class="controls">
+    <label>Nodes (e.g., A,B,C):</label>
+    <input type="text" id="nodesInput" placeholder="A,B,C" />
+    <label>Edges (e.g., A-B:3,B-C:2,C-A:1):</label>
+    <input type="text" id="edgesInput" placeholder="A-B:3,B-C:2,C-A:1" />
+    <button onclick="drawGraph()">Draw Graph</button>
+    <!-- <label for="">Start Vertex prim's:</label>
+    <input type="text" id="startVertex" placeholder="vertex">
+    <button onclick="runPrim()">Run Prim's</button> -->
+    <button onclick="runKruskal()">Calculate MST</button>
+  </div>
+
+  <svg id="graph"></svg>
+  <p id="mstWeightDisplay" ></p>
+
+
+  <script src="./final.js"></script>
+</body>
+</html>
