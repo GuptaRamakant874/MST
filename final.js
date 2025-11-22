@@ -1,175 +1,205 @@
-let nodes = [], edges = [], svg;
-let count = 0;
+let nodes = [];
+let edges = [];
+let svg;
 
-  function drawGraph() {
-    svg = document.getElementById("graph");
-    svg.innerHTML = "";
+// Draw the graph from the input
+function drawGraph() {
+  svg = document.getElementById("graph");
+  svg.innerHTML = "";
+  document.getElementById("mstWeightDisplay").textContent = ""; // clear old MST text
 
-    const nodeIds = document.getElementById("nodesInput").value.split(",").map(s => s.trim()).filter(Boolean);
-    const edgesInput = document.getElementById("edgesInput").value.split(",").map(e => e.trim());
+  const rawNodes = document
+    .getElementById("nodesInput")
+    .value.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-    const angleStep = (2 * Math.PI) / nodeIds.length;
-    const radius = 200;
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
+  const rawEdges = document
+    .getElementById("edgesInput")
+    .value.split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
 
-    nodes = nodeIds.map((id, i) => ({
-      id,
-      x: centerX + radius * Math.cos(i * angleStep),
-      y: centerY + radius * Math.sin(i * angleStep),
-    }));
+  if (rawNodes.length === 0) {
+    alert("Please enter at least one node (e.g., A,B,C).");
+    return;
+  }
 
-    edges = edgesInput.map(e => {
-      const [pair, weight] = e.split(":");
-      const [from, to] = pair.split("-");
-      return { from, to, weight: parseInt(weight) };
-    });
+  // Compute center from SVG size
+  const svgRect = svg.getBoundingClientRect();
+  const width = svgRect.width || svg.clientWidth || 600;
+  const height = svgRect.height || svg.clientHeight || 400;
 
-    const edgeCount = {};
+  const angleStep = (2 * Math.PI) / rawNodes.length;
+  const radius = Math.min(width, height) / 2 - 40;
+  const centerX = width / 2;
+  const centerY = height / 2;
 
-    edges.forEach(edge => {
-      const key = `${edge.from}-${edge.to}`;
-      edgeCount[key] = (edgeCount[key] || 0) + 1;
-      edge.count = edgeCount[key];
-    });
+  // Build node list with positions
+  nodes = rawNodes.map((id, i) => ({
+    id,
+    x: centerX + radius * Math.cos(i * angleStep),
+    y: centerY + radius * Math.sin(i * angleStep),
+  }));
 
-    const multipleEdgeOffset = 10;
+  // Parse edges of form U-V:weight
+  edges = [];
+  for (const e of rawEdges) {
+    const [uv, w] = e.split(":");
+    if (!uv || !w) continue;
 
-    edges.forEach(edge => {
-      const fromNode = nodes.find(n => n.id === edge.from);
-      const toNode = nodes.find(n => n.id === edge.to);
+    const [u, v] = uv.split("-").map((s) => s.trim());
+    const weight = Number(w);
 
-      if (fromNode && toNode) {
-        if (edge.from === edge.to) {
-          // Draw loop edge
-          const loop = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-          loop.setAttribute("cx", fromNode.x);
-          loop.setAttribute("cy", fromNode.y - 30); // offset loop above node
-          loop.setAttribute("r", 15);
-          loop.setAttribute("stroke", "#888");
-          loop.setAttribute("stroke-width", 2);
-          loop.setAttribute("fill", "none");
-          svg.appendChild(loop);
+    if (!u || !v || isNaN(weight)) continue;
 
-          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          label.setAttribute("x", fromNode.x);
-          label.setAttribute("y", fromNode.y - 50);
-          label.textContent = edge.weight;
-          label.classList.add("weight-label");
-          svg.appendChild(label);
-        } else {
-          // Calculate offset for multiple edges
-          const dx = toNode.y - fromNode.y;
-          const dy = fromNode.x - toNode.x;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const offsetX = (dx / length) * (edge.count - 1) * multipleEdgeOffset;
-          const offsetY = (dy / length) * (edge.count - 1) * multipleEdgeOffset;
+    // Only add edges whose nodes exist
+    if (!nodes.find((n) => n.id === u) || !nodes.find((n) => n.id === v)) {
+      continue;
+    }
 
-          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          line.setAttribute("x1", fromNode.x + offsetX);
-          line.setAttribute("y1", fromNode.y + offsetY);
-          line.setAttribute("x2", toNode.x + offsetX);
-          line.setAttribute("y2", toNode.y + offsetY);
-          line.classList.add("edge");
-          svg.appendChild(line);
+    edges.push({ from: u, to: v, weight });
+  }
 
-          const midX = (fromNode.x + toNode.x) / 2 + offsetX;
-          const midY = (fromNode.y + toNode.y) / 2 + offsetY;
-          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          label.setAttribute("x", midX);
-          label.setAttribute("y", midY);
-          label.textContent = edge.weight;
-          label.classList.add("weight-label");
-          svg.appendChild(label);
-        }
-      }
-    });
+  // Count multiple edges between same pair for offset
+  const edgeCount = {};
+  edges.forEach((edge) => {
+    const key =
+      edge.from < edge.to
+        ? `${edge.from}-${edge.to}`
+        : `${edge.to}-${edge.from}`;
+    edgeCount[key] = (edgeCount[key] || 0) + 1;
+    edge.count = edgeCount[key];
+  });
 
-    nodes.forEach(node => {
-      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      circle.setAttribute("cx", node.x);
-      circle.setAttribute("cy", node.y);
-      circle.setAttribute("r", 20);
-      circle.classList.add("node");
-      svg.appendChild(circle);
+  const multipleEdgeOffset = 10;
 
-      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      text.setAttribute("x", node.x);
-      text.setAttribute("y", node.y);
-      text.textContent = node.id;
-      text.classList.add("label");
-      svg.appendChild(text);
-    });
+  // Draw edges (lines / loops)
+  edges.forEach((edge) => {
+    const fromNode = nodes.find((n) => n.id === edge.from);
+    const toNode = nodes.find((n) => n.id === edge.to);
+    if (!fromNode || !toNode) return;
+
+    if (edge.from === edge.to) {
+      // self-loop
+      const loop = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      loop.setAttribute("cx", fromNode.x);
+      loop.setAttribute("cy", fromNode.y - 30);
+      loop.setAttribute("r", 15);
+      loop.classList.add("edge");
+      svg.appendChild(loop);
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("x", fromNode.x);
+      label.setAttribute("y", fromNode.y - 50);
+      label.textContent = edge.weight;
+      label.classList.add("weight-label");
+      svg.appendChild(label);
+    } else {
+      // straight edge or curved multi-edge
+      const dx = toNode.x - fromNode.x;
+      const dy = toNode.y - fromNode.y;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+
+      const offsetFactor = (edge.count - 1) * multipleEdgeOffset;
+      const offsetX = nx * offsetFactor;
+      const offsetY = ny * offsetFactor;
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", fromNode.x + offsetX);
+      line.setAttribute("y1", fromNode.y + offsetY);
+      line.setAttribute("x2", toNode.x + offsetX);
+      line.setAttribute("y2", toNode.y + offsetY);
+      line.classList.add("edge");
+      svg.appendChild(line);
+
+      const midX = (fromNode.x + toNode.x) / 2 + offsetX;
+      const midY = (fromNode.y + toNode.y) / 2 + offsetY;
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("x", midX);
+      label.setAttribute("y", midY);
+      label.textContent = edge.weight;
+      label.classList.add("weight-label");
+      svg.appendChild(label);
+    }
+  });
+
+  // Draw nodes on top
+  nodes.forEach((node) => {
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", node.x);
+    circle.setAttribute("cy", node.y);
+    circle.setAttribute("r", 20);
+    circle.classList.add("node");
+    svg.appendChild(circle);
+
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", node.x);
+    text.setAttribute("y", node.y);
+    text.textContent = node.id;
+    text.classList.add("label");
+    svg.appendChild(text);
+  });
+}
+
+// Demo Graph
+function loadDemo() {
+  // Example demo graph
+  // Nodes: A, B, C, D, E
+  // Edges with weights form a nice MST example
+  document.getElementById("nodesInput").value = "A,B,C,D,E";
+
+  document.getElementById("edgesInput").value =
+    "A-B:2,A-C:3,B-C:1,B-D:4,C-D:5,C-E:6,D-E:7";
+
+  // Draw the graph immediately so audience sees something change
+  drawGraph();
+
+  // If you want it to also immediately compute MST, uncomment this:
+  // runKruskal();
 }
 
 
-    // function runPrim() {
-    //     if (nodes.length === 0 || edges.length === 0) return alert("Please draw a graph first.");
+// Kruskal's algorithm for MST
+function runKruskal() {
+  if (nodes.length === 0 || edges.length === 0) {
+    alert("Please draw a graph first.");
+    return;
+  }
 
-    //     const start = document.getElementById("startVertex").value.trim();
-    //     if (!start || !nodes.find(n => n.id === start)) {
-    //         return alert("Please enter a valid starting vertex that exists in the graph.");
-    //      }
+  const parent = {};
+  nodes.forEach((n) => (parent[n.id] = n.id));
 
-    //     const visited = new Set();
-    //     const mstEdges = [];
-    //     visited.add(start);
+  const find = (x) => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+  const union = (x, y) => {
+    const rootX = find(x);
+    const rootY = find(y);
+    if (rootX !== rootY) parent[rootY] = rootX;
+  };
 
-    //     while (visited.size < nodes.length) {
-    //         let minEdge = null;
-    //         for (const edge of edges) {
-    //             const inSet = visited.has(edge.from);
-    //             const outSet = !visited.has(edge.to);
-    //             const inSetRev = visited.has(edge.to);
-    //             const outSetRev = !visited.has(edge.from);
-    //             if ((inSet && outSet) || (inSetRev && outSetRev)) {
-    //                 if (!minEdge || edge.weight < minEdge.weight) {
-    //                 minEdge = edge;
-    //                 }
-    //             }
-    //         }
-    //         if (!minEdge) break;
-    //         mstEdges.push(minEdge);
-    //         visited.add(minEdge.from);
-    //         visited.add(minEdge.to);
-    //     }
+  const sortedEdges = [...edges].sort((a, b) => a.weight - b.weight);
+  const mstEdges = [];
 
-    //     highlightEdges(mstEdges);
-    // }
-
-
-    function runKruskal() {
-      if (nodes.length === 0 || edges.length === 0) return alert("Please draw a graph first.");
-
-      const parent = {};
-      const find = (x) => (parent[x] === x ? x : parent[x] = find(parent[x]));
-      // this is union is used to detect cycle in graph
-      const union = (x, y) => {
-        const rootX = find(x);
-        const rootY = find(y);
-        if (rootX !== rootY) parent[rootY] = rootX;
-      };
-
-      nodes.forEach(n => parent[n.id] = n.id);
-      const sortedEdges = [...edges].sort((a, b) => a.weight - b.weight);
-      const mstEdges = [];
-
-      for (const edge of sortedEdges) {
-        if (find(edge.from) !== find(edge.to)) {
-          mstEdges.push(edge);
-          union(edge.from, edge.to);
-        }
-        if (mstEdges.length === nodes.length - 1) break;
-      }
-
-      highlightEdges(mstEdges);
+  for (const edge of sortedEdges) {
+    if (find(edge.from) !== find(edge.to)) {
+      mstEdges.push(edge);
+      union(edge.from, edge.to);
     }
+    if (mstEdges.length === nodes.length - 1) break;
+  }
 
+  highlightEdges(mstEdges);
+}
+
+// Highlight MST edges and show total weight
 function highlightEdges(mstEdges) {
-  svg.innerHTML = ""; // Clear entire graph
+  svg.innerHTML = "";
 
-  // Draw only nodes
-  nodes.forEach(node => {
+  // Draw nodes
+  nodes.forEach((node) => {
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circle.setAttribute("cx", node.x);
     circle.setAttribute("cy", node.y);
@@ -185,35 +215,34 @@ function highlightEdges(mstEdges) {
     svg.appendChild(text);
   });
 
-  // Draw MST edges (green) and calculate total weight
+  // Draw only MST edges
   let totalWeight = 0;
+  mstEdges.forEach((edge) => {
+    const fromNode = nodes.find((n) => n.id === edge.from);
+    const toNode = nodes.find((n) => n.id === edge.to);
+    if (!fromNode || !toNode) return;
 
-  mstEdges.forEach(edge => {
-    const fromNode = nodes.find(n => n.id === edge.from);
-    const toNode = nodes.find(n => n.id === edge.to);
-    if (fromNode && toNode) {
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", fromNode.x);
-      line.setAttribute("y1", fromNode.y);
-      line.setAttribute("x2", toNode.x);
-      line.setAttribute("y2", toNode.y);
-      line.classList.add("mst-edge");
-      svg.appendChild(line);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", fromNode.x);
+    line.setAttribute("y1", fromNode.y);
+    line.setAttribute("x2", toNode.x);
+    line.setAttribute("y2", toNode.y);
+    line.classList.add("mst-edge");
+    svg.appendChild(line);
 
-      // Add weight label on green line
-      const midX = (fromNode.x + toNode.x) / 2;
-      const midY = (fromNode.y + toNode.y) / 2;
-      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      label.setAttribute("x", midX);
-      label.setAttribute("y", midY);
-      label.textContent = edge.weight;
-      label.classList.add("weight-label");
-      svg.appendChild(label);
+    const midX = (fromNode.x + toNode.x) / 2;
+    const midY = (fromNode.y + toNode.y) / 2;
 
-      totalWeight += edge.weight;
-    }
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", midX);
+    label.setAttribute("y", midY);
+    label.textContent = edge.weight;
+    label.classList.add("weight-label");
+    svg.appendChild(label);
+
+    totalWeight += edge.weight;
   });
 
-  // Display total MST weight
-  document.getElementById("mstWeightDisplay").textContent = `Total MST Weight: ${totalWeight}`;
+  document.getElementById("mstWeightDisplay").textContent =
+    "Total MST Weight: " + totalWeight;
 }
